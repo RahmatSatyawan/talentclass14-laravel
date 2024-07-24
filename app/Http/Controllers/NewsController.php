@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers;
 
+
+// use App\Models\News;
 use Illuminate\Http\Request;
-// use App\Models\Category;
 
 class Categories 
 {
@@ -50,114 +51,79 @@ class News
         ]);
     }
 
-    public static function find(){
-        return self::where('id','=',$this->id)->first();
+    public static function find($id){
+        return self::where('id', $id)->first();
     }
 }
 
 
-class HomeController extends Controller
+
+
+class NewsController extends Controller
 {
     public function index()
     {
-        $categories = Categories::all();
-
         $news = News::all();
-        // $news = News::paginate(10);
-
-        // return view('index', compact('categories' 'news->paginate(10)');
-        return view('index', compact('categories', 'news'));
+        return view('news.index', compact('news'));
     }
 
-
-    public function selectNews($category)
+    public function show($id)
     {
-        if ($category == '/') {
-            return $this->handleBooksCategory();
-        } elseif ($category !== '/') {
-            return $this->handleMoviesCategory();
-        }
-        // Default action
-        return $this->handleDefaultCategory();
-    }
+        // $news = News::find($id);
+        // view('details', compact('news'));   
 
-    protected function handleBooksCategory()
-    {
-        // Handle books category logic
-    }
-
-    protected function handleMoviesCategory()
-    {
-        // Handle movies category logic
-    }
-
-    protected function handleDefaultCategory()
-    {
-        // Handle default category logic
-    }
-
-
-    public function category($category)
-    {
-
-        $news  = News::all();
         $categories = Categories::all();
-        
-        $news = News::all()->where('category', $category);
-
-        // Convert the first character of each word to uppercase
-        $category = ucwords($category);
-    
-        if (!in_array($category, $categories)) {
-            return redirect('/')->with('error', 'Category not found.');
-        }
-
-
-    
-        // If the category exists, proceed to show the category view
-        return view('index', compact('categories', 'category', 'news'));
+        $news = News::all();
+        $newsItem = $news -> firstWhere('id', $id);
+        if ($newsItem)
+            return view('details', compact('newsItem', 'categories'));   
+        else
+            return view('details', message('not found')); 
+            
+        // foreach ($this->newsData as $news) {
+        //     if ($news['id'] == $id) {
+        //         return response()->json($news);
+        //     }
+        // }
+        // return response()->json(['message' => 'News not found'], 404);
     }
 
-
-    //Static content
-    public function showTerms()
+    public function create()
     {
-        $path = resource_path('./markdown/terms.md');
-
-        if (file_exists($path)) {
-            $markdown = file_get_contents($path);
-            $terms = (new \Parsedown())->text($markdown);
-        } else {
-            $terms = "Terms and conditions not found.";
-        }
-    
-        return view('page.terms', compact('terms'));
+        return view('news.create');
     }
 
-    public function showPolicy()
+    public function store(Request $request)
     {
-        $path = resource_path('./markdown/policy.md');
+        $news = new News();
+        $news->title = $request->title;
+        $news->content = $request->content;
+        $news->save();
 
-        if (file_exists($path)) {
-            $markdown = file_get_contents($path);
-            $policy = (new \Parsedown())->text($markdown);
-        } else {
-            $policy = "Privacy policy not found.";
-        }
-    
-        return view('page.policy', compact('policy'));
+        return redirect()->route('news.index');
     }
 
-    public function showContact()
+    public function edit($id)
     {
-        $path = resource_path('./markdown/contact.md');
-        if (file_exists($path)) {
-            $markdown = file_get_contents($path);
-            $contact = (new \Parsedown())->text($markdown);
-        } else {
-            $contact = "Contact not found.";
-        }
-        return view("page.contact", compact("contact"));
+        $news = News::find($id);
+        return view('news.edit', compact('news'));
     }
 
+    public function update(Request $request, $id)
+    {
+        $news = News::find($id);
+        $news->title = $request->title;
+        $news->content = $request->content;
+        $news->save();
+
+        return redirect()->route('news.index');
+    }
+
+    public function destroy($id)
+    {
+        $news = News::find($id);
+        $news->delete();
+
+        return redirect()->route('news.index');
+    }
 }
